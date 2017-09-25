@@ -1,0 +1,136 @@
+apiVersion: v1
+kind: Template
+labels:
+  template: hello-falcon
+metadata:
+  name: hello-falcon
+  annotations:
+    description: "Hello world application with falcon"
+    tags: "python"
+    iconClass: "icon-python"
+objects:
+- kind: Service
+  apiVersion: v1
+  metadata:
+    name: "${APPLICATION_NAME}-app"
+    labels:
+      app: ${APPLICATION_NAME}
+  spec:
+    clusterIP: None
+    ports:
+    - name: "{APPLICATION_NAME}-app"
+      port: "{APPLICATION_PORT}"
+      protocol: TCP
+      targetPort: "{APPLICATION_PORT}"
+    selector:
+      app: ${APPLICATION_NAME}
+- kind: Route
+  apiVersion: v1
+  metadata:
+    name: "${APPLICATION_NAME}-app"
+    labels:
+      app: ${APPLICATION_NAME}
+  spec:
+    port:
+      targetPort: "{APPLICATION_NAME}-app"
+    tls:
+      termination: passthrough
+    to:
+      kind: Service
+      name: "{APPLICATION_NAME}"
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    labels:
+      app: ${APPLICATION_NAME}
+    name: ${APPLICATION_NAME}
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    labels:
+      app: ${APPLICATION_NAME}
+    name: ${APPLICATION_NAME}
+  spec:
+    output:
+      to:
+        kind: ImageStreamTag
+        name: ${APPLICATION_NAME}:latest
+    source:
+      contextDir: ${CONTEXT_DIR}
+      git:
+        ref: ${SOURCE_REPOSITORY_REF}
+        uri: ${SOURCE_REPOSITORY_URL}
+      type: Git
+    strategy:
+      dockerStrategy:
+        forcePull: true
+      type: Docker
+    triggers:
+    - type: ConfigChange
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    labels:
+      application: ${APPLICATION_NAME}
+    name: ${APPLICATION_NAME}
+  spec:
+    replicas: 1
+    selector:
+      deploymentConfig: ${APPLICATION_NAME}
+    strategy:
+      type: Recreate
+    template:
+      metadata:
+        labels:
+          app: ${APPLICATION_NAME}
+        name: ${APPLICATION_NAME}
+      spec:
+        containers:
+        - image: ${APPLICATION_NAME}
+          imagePullPolicy: Always
+          name: ${APPLICATION_NAME}
+          ports:
+          - containerPort: "{APPLICATION_PORT}"
+            name: app
+            protocol: TCP
+          - containerPort: "{HEALTH_PORT}"
+            name: health-check
+            protocol: TCP
+    triggers:
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ${APPLICATION_NAME}
+        from:
+          kind: ImageStreamTag
+          name: ${APPLICATION_NAME}:latest
+      type: ImageChange
+    - type: ConfigChange
+parameters:
+  - name: APPLICTAION_NAME
+    displayName: Application name
+    required: true
+    description: Name of application
+    value: hello-falcon
+  - name: APPLICATION_PORT
+    displayName: Application port
+    required: true
+    description: Port application is listening on
+    value: 8080
+  - name: HEALTH_PORT
+    displayName: Application health check port
+    required: true
+    description: Port application health check is listening on
+    value: 8081
+  - name: SOURCE_REPOSITORY_REF
+    displayName: Source Repository Ref
+    required: true
+    description: Branch, Tag, or Commit to build from
+  - name: SOURCE_REPOSITORY_URL
+    displayName: Git URL
+    required: true
+    description: Git URL of source code
+  - name: CONTEXT_DIR
+    displayName: Context Directory
+    required: true
+    description: Path in source repository to source code
