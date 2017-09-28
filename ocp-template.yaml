@@ -14,7 +14,7 @@ objects:
   metadata:
     name: "${APPLICATION_NAME}-app"
     labels:
-      app: ${APPLICATION_NAME}
+      app: "${APPLICATION_NAME}"
   spec:
     clusterIP: None
     ports:
@@ -23,13 +23,13 @@ objects:
       protocol: TCP
       targetPort: "{APPLICATION_PORT}"
     selector:
-      app: ${APPLICATION_NAME}
+      app: "${APPLICATION_NAME}"
 - kind: Route
   apiVersion: v1
   metadata:
     name: "${APPLICATION_NAME}-app"
     labels:
-      app: ${APPLICATION_NAME}
+      app: "${APPLICATION_NAME}"
   spec:
     port:
       targetPort: "{APPLICATION_NAME}-app"
@@ -42,19 +42,19 @@ objects:
   kind: ImageStream
   metadata:
     labels:
-      app: ${APPLICATION_NAME}
-    name: ${APPLICATION_NAME}
+      app: "${APPLICATION_NAME}"
+    name: "${APPLICATION_NAME}"
 - apiVersion: v1
   kind: BuildConfig
   metadata:
     labels:
-      app: ${APPLICATION_NAME}
-    name: ${APPLICATION_NAME}
+      app: "${APPLICATION_NAME}"
+    name: "${APPLICATION_NAME}"
   spec:
     output:
       to:
         kind: ImageStreamTag
-        name: ${APPLICATION_NAME}:latest
+        name: "${APPLICATION_NAME}:latest"
     source:
       contextDir: ${CONTEXT_DIR}
       git:
@@ -71,24 +71,24 @@ objects:
   kind: DeploymentConfig
   metadata:
     labels:
-      application: ${APPLICATION_NAME}
-    name: ${APPLICATION_NAME}
+      app: "${APPLICATION_NAME}"
+    name: "${APPLICATION_NAME}"
   spec:
     replicas: 1
     selector:
-      deploymentConfig: ${APPLICATION_NAME}
+      deploymentConfig: "${APPLICATION_NAME}"
     strategy:
       type: Recreate
     template:
       metadata:
         labels:
-          app: ${APPLICATION_NAME}
-        name: ${APPLICATION_NAME}
+          app: "${APPLICATION_NAME}"
+        name: "${APPLICATION_NAME}"
       spec:
         containers:
-        - image: ${APPLICATION_NAME}
+        - image: "${APPLICATION_NAME}"
           imagePullPolicy: Always
-          name: ${APPLICATION_NAME}
+          name: "${APPLICATION_NAME}"
           ports:
           - containerPort: "{APPLICATION_PORT}"
             name: app
@@ -100,14 +100,14 @@ objects:
     - imageChangeParams:
         automatic: true
         containerNames:
-        - ${APPLICATION_NAME}
+        - "${APPLICATION_NAME}"
         from:
           kind: ImageStreamTag
-          name: ${APPLICATION_NAME}:latest
+          name: "${APPLICATION_NAME}:latest"
       type: ImageChange
     - type: ConfigChange
 parameters:
-  - name: APPLICTAION_NAME
+  - name: APPLICATION_NAME
     displayName: Application name
     required: true
     description: Name of application
@@ -116,16 +116,17 @@ parameters:
     displayName: Application port
     required: true
     description: Port application is listening on
-    value: 8080
+    value: '8080'
   - name: HEALTH_PORT
     displayName: Application health check port
     required: true
     description: Port application health check is listening on
-    value: 8081
+    value: '8081'
   - name: SOURCE_REPOSITORY_REF
     displayName: Source Repository Ref
     required: true
     description: Branch, Tag, or Commit to build from
+    value: master
   - name: SOURCE_REPOSITORY_URL
     displayName: Git URL
     required: true
