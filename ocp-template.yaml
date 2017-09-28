@@ -33,11 +33,11 @@ objects:
   spec:
     port:
       targetPort: "{APPLICATION_NAME}-app"
-    tls:
-      termination: passthrough
     to:
       kind: Service
       name: "{APPLICATION_NAME}"
+      weight: 100
+    wildcardPolicy: None
 - apiVersion: v1
   kind: ImageStream
   metadata:
